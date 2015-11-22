@@ -1,0 +1,20 @@
+{
+  "name": "wino-serve-api",
+  "version": "0.0.1",
+  "description": "serve the doc",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/baloran/wino-api-doc.git"
+  },
+  "author": "Baloran aka Arnaud Allouis",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/baloran/wino-api-doc#readme",
+  "dependencies": {
+    "express": "^4.13.3",
+    "http-auth": "^2.2.8"
+  }
+}
