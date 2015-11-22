@@ -13,6 +13,6 @@ app.use(auth.connect(basic));
 
 app.use(express.static('client'));
 
-app.listen(80, function () {
-  console.log('Daredevil started on port 8080');
+app.listen(9999, function () {
+  console.log('Daredevil started on port 9999');
 });
