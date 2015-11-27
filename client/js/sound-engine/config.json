@@ -57,18 +57,21 @@
 	},
 	"clues": {
 		"0": {
-			"photo": "test.jpg",
-			"name": "Bachi Bouzouk",
-			"text": "Lorem ipsum dolor est"
+			"photo": "indice-1.png",
+			"name": "Claire Temple",
+			"actor": "Deborah Ann Woll",
+			"text": "Oh yes, I saw someone running. Do you want some help ? You don't look really good ... Oh, yes, I forgott : he turned on the right at the corner of the \"Signature Theatre Company\". Just follow me, I will show you."
 		},
 		"1": {
 			"photo": "test_chinois.jpg",
 			"name": "Bachi Bouzouk chinois",
+			"actor": "Deborah Ann Woll",
 			"text": "Lorem ipsum chinois dolor est"
 		},
 		"2": {
 			"photo": "test_pluie.jpg",
 			"name": "Bachi Bouzouk pluie",
+			"actor": "Deborah Ann Woll",
 			"text": "Lorem ipsum pluie dolor est"
 		}
 	},

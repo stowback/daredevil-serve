@@ -71,6 +71,7 @@
 		// Loop
 		this.loop = null;
 		this.pause = false;
+		this.clue = false;
 
 		// Callbacks
 		this.callbacks = {
@@ -183,8 +184,8 @@
 		{
 			
 			// Characters sounds
-			this.map.daredevil.fadeIn(1000);
-			this.map.vilain.fadeIn(1200);
+			self.map.daredevil.fadeIn(1000);
+			self.map.vilain.fadeIn(1200);
 
 			// Time
 			self.time.started = new Date().getTime();
@@ -367,6 +368,9 @@
 	Game.prototype.giveClue = function ()
 	{
 
+		// Update
+		this.clue = true;
+
 		// Sounds
 		this.map.daredevil.fadeOut(1000);
 		this.map.vilain.fadeOut(1000);
@@ -396,6 +400,9 @@
 
 		// Reference
 		var self = this;
+
+		// Update
+		this.clue = false;
 
 		// Position
 		this.map.daredevil.move(this.map.vilain.position.x, this.map.daredevil.position.y);

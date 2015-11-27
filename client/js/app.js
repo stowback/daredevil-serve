@@ -15601,6 +15601,10 @@ return /******/ (function(modules) { // webpackBootstrap
         });
     };
 });
+/**
+ * YoloJS
+ * VC framework
+ */
 var YoloJS = function () {
 
   this.version = '0.0.1';
@@ -15612,6 +15616,9 @@ var dard = YoloJS.Daredevil = function () {
   this.loadTpl.apply(this);
 }
 
+/**
+ * Extend the object with Underscore
+ */
 _.extend(dard.prototype, {
 
   previousPage: null,
@@ -15619,25 +15626,27 @@ _.extend(dard.prototype, {
   tpl: [],
   tplLoaded: [],
   
+  // Process trigger for faceData of VisageSDK
   process: function (faceData) {
-    if (faceData.faceRotation[1] > 0.10) {
+
+    if (faceData.faceRotation[1] > 0.10) { // Look Left
       $.event.trigger({
         type: "lookLeft",
         time: new Date()
       });
-    } else if (faceData.faceRotation[1] <= 0.10 && faceData.faceRotation[1] >= -0.10) {
+    } else if (faceData.faceRotation[1] <= 0.10 && faceData.faceRotation[1] >= -0.10) { // Look center
       $.event.trigger({
         type: "lookCenter",
         time: new Date()
       });
-    } else {
+    } else { // Look right
       $.event.trigger({
         type: "lookRight",
         time: new Date()
       });
     }
 
-    if (faceData.eyeClosure[0] == 0 && faceData.eyeClosure[1] == 0) {
+    if (faceData.eyeClosure[0] == 0 && faceData.eyeClosure[1] == 0) { // Eyes Closed
       $.event.trigger({
         type: "eyesClosed",
         time: new Date()
@@ -15645,6 +15654,10 @@ _.extend(dard.prototype, {
     }
   },
 
+  /**
+   * loadTpl
+   * return trigger
+   */
   loadTpl: function () {
 
     var self = this;
@@ -15660,13 +15673,14 @@ _.extend(dard.prototype, {
       }));
     });
 
+    // Promise
     $.when.apply($, promise).then(function () {
       $.event.trigger('tplLoaded');
     });
   }
 });
 
-// Backbone extend
+// Extend function
 var extend = function(protoProps, staticProps) {
   var parent = this;
   var child;
@@ -15688,6 +15702,9 @@ var extend = function(protoProps, staticProps) {
 };
 
 dard.extend = extend;
+/**
+ * YoloJS Framework routing
+ */
 var Router = YoloJS.Router = function () {
 
   this.routes = [];
@@ -15696,8 +15713,14 @@ var Router = YoloJS.Router = function () {
   this.updated = false;
 };
 
+// Extend Router
 _.extend(Router.prototype, {
 
+  /**
+   * Config
+   * history: url in / but need URL REWRITING for work well
+   * hash: Work everywhere
+   */
   config: function  (options) {
     this.mode = options && options.mode && options.mode == 'history' 
                 && !!(history.pushState) ? 'history' : 'hash';
@@ -15705,6 +15728,11 @@ _.extend(Router.prototype, {
     return this;
   },
 
+  /**
+   * Add a route to the router
+   * @param {regex} route       the regex of the route
+   * @param {function} handlr   the callback
+   */
   add: function (route, handler) {
 
     if(typeof route == 'function') {
@@ -15715,6 +15743,10 @@ _.extend(Router.prototype, {
     return this;
   },
 
+  /**
+   * Get the current fragment of the url
+   * @return {string} the url
+   */
   getFragment: function() {
 
     var fragment = '';
@@ -15729,11 +15761,17 @@ _.extend(Router.prototype, {
     return this.clearSlashes(fragment);
   },
   
+  /**
+   * Clean the url
+   */
   clearSlashes: function(path) {
 
     return path.toString().replace(/\/$/, '').replace(/^\//, '');
   },
 
+  /**
+   * Check the url
+   */
   check: function(f) {
 
     var fragment = f || this.getFragment();
@@ -15748,6 +15786,9 @@ _.extend(Router.prototype, {
     return this;
   },
 
+  /**
+   * Listen the router
+   */
   listen: function() {
 
     var self = this;
@@ -15766,6 +15807,10 @@ _.extend(Router.prototype, {
     return this;
   },
 
+  /**
+   * Navigate into the router and the App
+   * @param  {string} path the string of the url
+   */
   navigate: function(path) {
     
     path = path ? path : '';
@@ -15777,7 +15822,10 @@ _.extend(Router.prototype, {
     return this;
   }
 });
- var View = YoloJS.View = function (options) {
+/**
+ * YoloJS View object 
+ */
+var View = YoloJS.View = function (options) {
 
   this.libs = new Array();
   this.libs['js'] = new Array();
@@ -15793,9 +15841,11 @@ _.extend(Router.prototype, {
   YoloJS.curentView = this;
   this.previousPage = null;
 
+  // Start the initialize
   this.initialize.apply(this, arguments);
 };
 
+// Extend the View.Prototype
 _.extend(View.prototype, {
 
   /**
@@ -15827,7 +15877,7 @@ _.extend(View.prototype, {
   // JS loaded
   js: [],
 
-  
+  // Iniitialize the View
   initialize: function () {
 
     if (YoloJS.previousPage == null) {
@@ -15842,16 +15892,20 @@ _.extend(View.prototype, {
 
     var self = this;
     var count = 0;
+
+    if (self.js.length <= 0) {
+      return cb(true);
+    };
+
     _.each(self.js, function (lib) {
       var tag = document.createElement("script");
       tag.src = 'js/' + self.libs['js'][lib];
       document.getElementsByTagName("head")[0].appendChild(tag);
       count++;
+      if (count >= self.js.length) {
+        cb(true);
+      };
     });
-
-    if (count == self.libs.length) {
-      cb(true);
-    };
   },
 
   // Load the hbs
@@ -15862,12 +15916,13 @@ _.extend(View.prototype, {
 
     var html = app.tplLoaded[self.tpl];
 
+    // IF already in Array of Template 
     if (html) {
 
       self.templating(self.compile(html), data)
       cb(null, true);
     } else {
-
+      // If not we go load it
       $.ajax({
         url: "views/" + this.tpl + ".hbs",
       }).done(function (hbs) {
@@ -15880,11 +15935,13 @@ _.extend(View.prototype, {
     }
   },
 
+  // Compile the HBS file
   compile: function (html) {
 
     return Handlebars.compile(html);
   },
 
+  // Append the hbs and put it data
   templating: function (template, data) {
 
     var self = this;
@@ -15899,7 +15956,6 @@ _.extend(View.prototype, {
         animationOutro;
 
     self.load(data, function () {
-      
     
       self.loadJS(function (res) {
         self.app.apply(self, arguments);
@@ -15907,9 +15963,9 @@ _.extend(View.prototype, {
 
       if (YoloJS.previousPage) {
         $('.page-' + YoloJS.previousPage.pageName).addClass('hide');
-        animationOutro = YoloJS.previousPage.timingAnimationOutro;
+        animationOutro = YoloJS.previousPage.timingAnimationOutro; // Use the previous View for animation Outro Delay
       } else {
-        animationOutro = 0;
+        animationOutro = 0; // If not PreviousPage so we put it to 0
       }
 
       setTimeout(function(){
@@ -15931,6 +15987,7 @@ _.extend(View.prototype, {
     $(self.tagName + ' .page-' + self.pageName).addClass('show');
   },
 
+  // Delete the previous Page
   deleteOldPage: function () {
 
     var self = this;
@@ -15942,15 +15999,17 @@ _.extend(View.prototype, {
     YoloJS.previousPage = self;
   },
 
-  getTpl: function (tpl, data) {
+  // Get template Handlebars directly in view method, no need to create a new view
+  getTpl: function (tpl, data, cb) {
 
-    var hbs = YoloJS.tplLoaded[tpl],
+    var hbs = app.tplLoaded[tpl],
         self = this;
 
     if (hbs) {
       
-      var tpl = self.compile(tpl);
-      return tpl(data);
+      var template = self.compile(hbs);
+
+      return cb(template(data), null);
     } else {
 
       $.ajax({
@@ -15959,23 +16018,30 @@ _.extend(View.prototype, {
 
         app.tplLoaded[tpl] = hbs;
 
-        var tpl = self.compile(tpl);
-        return tpl(data);
+        var template = self.compile(hbs);
+        
+        return cb(template(data), null);
       });
     }
   } 
 });
 
 View.extend = extend;
+/**
+ * Initialize the framework YoloJS
+ * tpl for load the HBS file before everything is called
+ */
 var Yolo = YoloJS.Daredevil.extend({
-  tpl: ['about', 'tuto', 'final', 'game', 'goal', 'help', 'home', 'intro', 'loading', 'webcam', 'win'],
+  tpl: ['about', 'tuto', 'final', 'game', 'goal', 'help', 'home', 'intro', 'loading', 'webcam', 'win', 'clue'],
   tplLoaded: []
 });
 
+// New instance of our framework
 var Daredevil = app = new Yolo();
 
 $(function () {
 
+  // New router
   var router = new Router();
 
   router.config();
@@ -15986,42 +16052,59 @@ $(function () {
   });
 
   router.add(/game/, function () {
-
     if (Daredevil.map != null) {
       new gameView(); 
     } else {
-      new loadingGameView();
+      Daredevil.router.navigate('/configuration');
     }
   });
 
+  /**
+   * GET /configuration
+   */
   router.add(/configuration/, function () {
 
     new tutoView();
   });
 
+  /**
+   * GET /loading
+   */
   router.add(/loading/, function () {
 
     new loadingGameView();
   });
 
+  /**
+   * GET /final
+   */
   router.add(/final/, function () {
 
     new finalView();
   });
 
+  /**
+   * GET /win
+   */
   router.add(/win/, function () {
 
     new winView();
   });
 
+  /**
+   * GET /
+   */
   router.add(function() {
 
     new homeView();
   });
 
-
+  /**
+   * Listen the URL change
+   */
   router.listen();
   
+  // Put router in our Object
   Daredevil.router = router;
 
 });
@@ -16075,76 +16158,125 @@ function endVideoIntro() {
 }
 var gameView = YoloJS.View.extend({
 
+
+  // Global
   tagName: '#app',
   pageName: "game",
   tpl: 'game',
-  timingAnimationIntro: 1000,
 
-  app: function () {
 
-    var game = new Game(Daredevil.map);
+  // Properties
+  game: null,
 
-    game.init(function () {
+  // App
+  app: function ()
+  {
 
-      game.start();
+    // Self
+    var self = this;
+
+    // Game
+    this.game = new Game(Daredevil.map);
+
+    // Win
+    this.game.callbacks.onWin = function (data){ console.log(data); };
+
+    // Lose
+    this.game.callbacks.onLose = function (data){ console.log(data); };
+
+    // Clue
+    this.game.callbacks.onClue = function (data){ self.getClue(data); };
+
+    // Webcam
+    if (Daredevil.navigation == "webcam") {
+
+      // $(document).on({
+
+      //   lookLeft: function() {
+      //     console.log('gauche')
+      //     game.setDaredevilMove("left");
+      //   },
+
+      //   lookRight: function () {
+      //     console.log('right')
+      //     game.setDaredevilMove("right");
+      //   }
+
+      // });
+    }
+
+    // Keyboard
+    else
+    {
+      $(window).on('keydown', function (e)
+      {  
+        console.log(e.keyCode);
+        switch(e.keyCode) {
+          case 37: self.game.setDaredevilMove("left"); break;
+          case 39: self.game.setDaredevilMove("right"); break;
+          case 32:
+            // Pause 
+            if(!self.game.pause && !self.game.clue)
+            {
+              // Update
+              self.game.setPause(true);
+
+              // Show
+              $('.game-pause').addClass('show').removeClass('hide');
+            }
+
+            // Resume
+            else if(self.game.pause && !self.game.clue)
+            {
+              // Update
+              self.game.setPause(false);
+
+              // Hide
+              $('.game-pause').addClass('hide').removeClass('show');
+            }
+          break;
+        }
+      });
+    }
+
+    self.game.init(function ()
+    {
+      self.game.start();
+    });
+  },
+
+
+  // Clue
+  getClue: function (clue)
+  {
+
+    // Reference
+    var self = this;
+
+    // Template
+    this.getTpl('clue', clue, function (template)
+    {
+      // Elem
+      var elem = $(template);
+      $('.page-game').append($(template));
+      elem = $('.page-clue');
+
+      // Show
+      elem.addClass('show').removeClass('hide');
+
+      // Action
+      elem.find('.btn').on('click', function (e)
+      {
+        e.preventDefault();
+        self.game.resume();
+        elem.addClass('hide').removeClass('show');
+        setTimeout(function (){ elem.remove(); }, 2000);
+      });
     });
 
-    game.callbacks.onWin = function (data){ console.log(data); };
-    game.callbacks.onLose = function (data){ console.log(data); };
-    game.callbacks.onClue = function (data){ console.log(data); };
+  },
 
-    console.log(Daredevil.navigation);
 
-    if (Daredevil.navigation == "webcam") {
-      try {
-        navigator.getUserMedia_({
-          video: true,
-          audio: false
-        }, startStream, function () {
-          $.event.trigger({
-            type: "notAllowWebcam",
-          });
-        });
-      } catch (e) {
-        try {
-          navigator.getUserMedia_('video', startStream, function () {
-            $.event.trigger({
-              type: "notAllowWebcam",
-            });
-          });
-        } catch (e) {
-          errorStream(e);
-        }
-      }
-      startStream();
-
-      $(document).on({
-
-        lookLeft: function() {
-          console.log('gauche')
-          game.setDaredevilMove("left");
-        },
-
-        lookRight: function () {
-          console.log('right')
-          game.setDaredevilMove("right");
-        }
-
-      });
-
-    } else {
-
-      $(window).on('keydown', function (e) {
-        
-        switch(e.keyCode) {
-          case 37: game.setDaredevilMove("left"); break;
-          case 39: game.setDaredevilMove("right"); break;
-        }
-
-      });
-
-    }
-  }
 });
 var tutoView = YoloJS.View.extend({
 
@@ -16211,8 +16343,13 @@ var tutoView = YoloJS.View.extend({
       $('.tuto-content.show').addClass('hide').removeClass('show');
 
       // Next
-      if(!Daredevil.map){ new loadingGameView();  }
-      else{ Daredevil.router.navigate('/game'); }
+      console.log(Daredevil.navigation);
+      if(Daredevil.navigation == "webcam"){ new webcamView(); }
+      else
+      {
+        if(!Daredevil.map){ new loadingGameView();  }
+        else{ Daredevil.router.navigate('/game'); }
+      }
     }
 
   },
@@ -16272,26 +16409,56 @@ var tutoView = YoloJS.View.extend({
 });
 var webcamView = YoloJS.View.extend({
 
+
+  // Global
   tagName: '#app',
   pageName: "wbecam",
   tpl: 'webcam',
-  timingAnimationIntro: 1000,
+  timingAnimationOutro: 0,
   js: ['bezier', 'visage', 'visageSDK'],
 
-  app: function () {
-    $(document).on({
-      lookLeft: function () {
-        console.log("coucou")
-      },
 
-      allowWebcam: function () {
-        console.log("allowed")
-        $('#continue-webcam').removeClass('disabled')
+  // App
+  app: function ()
+  {
+
+    // Allow
+    $(document).on(
+    {
+      allowWebcam: function ()
+      {
+        // Try webcam stream
+        try
+        {
+          navigator.getUserMedia_({
+            video: true,
+            audio: false
+          }, startStream, function () {
+            $.event.trigger({
+              type: "notAllowWebcam",
+            });
+          });
+        }
+        catch (e)
+        {
+          try {
+            navigator.getUserMedia_('video', startStream, function () {
+              $.event.trigger({
+                type: "notAllowWebcam",
+              });
+            });
+          } catch (e) {
+            errorStream(e);
+          }
+        }
+
+        // Start stream
+        startStream();
+
+        // Redirect
+        if(!Daredevil.map){ new loadingGameView();  }
+        else{ Daredevil.router.navigate('/game'); }
       } 
-    });
-
-    $('#continue-webcam').click(function () {
-      Daredevil.router.navigate('/game');
     });
   }
 
@@ -16506,6 +16673,6 @@ var winView = YoloJS.View.extend({
 
   tagName: '#app',
   pageName: "win",
-  tpl: 'win',
+  tpl: 'lose',
   timingAnimationIntro: 1000,
 });
