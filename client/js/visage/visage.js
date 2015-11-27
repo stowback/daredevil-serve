@@ -876,7 +876,7 @@ function startStream(stream){
       
       //set up tracker and licensing, valid license needs to be provided
       m_Tracker = new Tracker("js/visage/visage/Facial Features Tracker - Asymmetric.cfg");
-      m_Tracker.initializeLicenseManager("122-250-422-916-217-370-249-855-960-549-258.vlc");
+      m_Tracker.initializeLicenseManager("621-779-695-382-628-293-368-416-356-668-314.vlc");
       faceData = new FaceData();
   
       //Use request animation frame mechanism - slower but with smoother animation
