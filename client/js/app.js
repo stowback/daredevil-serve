@@ -16554,7 +16554,7 @@ var loadingGameView = YoloJS.View.extend({
     this.container = $('.loading-container');
 
     // Start
-    this.setLoading("Download datas");
+    this.setLoading("Downloading datas");
     
     // Request
     var jsonCall = $.getJSON('js/sound-engine/config.json');
@@ -16574,8 +16574,11 @@ var loadingGameView = YoloJS.View.extend({
         function (message){ self.setLoading(message); },
         function ()
         {
-          self.setLoading("Initialisation of paths"); 
-          self.next();
+          setTimeout(function () 
+          {
+            self.setLoading("Initialisation of paths"); 
+            self.next();
+          }, 2500);
         },
         function (error){ self.loading("Unfortunately, an error occured"); });
     });

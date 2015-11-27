@@ -101,6 +101,7 @@
 				that.dimensions.widthDistance = that.dimensions.width*that.config.map.points.width;
 
 				// Callback
+				progress('Loading of districts');
 				that.createDistricts(0, progress, success, error);
 			})
 		.error(function (err){ error("Failed to load data"); });
@@ -114,7 +115,12 @@
 		var that = this;
 
 		// No more districts ?
-		if(i >= this.districts.length){ this.createObjects(0, 0, progress, success, error); return; }
+		if(i >= this.districts.length)
+		{ 
+			progress('Loading of objects');
+			this.createObjects(0, 0, progress, success, error); 
+			return;
+		}
 
 		// Manage district
 		if(this.districts[i])
@@ -150,7 +156,12 @@
 		var that = this;
 
 		// No more cells
-		if(x*y >= this.dimensions.totalIndexs){ this.createCharacters(progress, success, error); return; }
+		if(x*y >= this.dimensions.totalIndexs)
+		{ 
+			progress('Loading of characters');
+			this.createCharacters(progress, success, error); 
+			return; 
+		}
 
 		// Manage cell
 		if(this.objects[y][x])
