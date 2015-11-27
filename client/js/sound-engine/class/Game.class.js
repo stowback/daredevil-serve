@@ -96,6 +96,12 @@
 		this.map.vilain.move(parseInt(this.map.dimensions.width/2)*this.map.config.map.points.width, this.map.config.characters.kidnapper.advance);
 		this.map.audio.context.listener.setPosition(parseInt(this.map.dimensions.width/2)*this.map.config.map.points.width, 0, 0);
 
+		// Districts
+		for(var i=0; i<this.map.sounds.districts.length; i++)
+		{
+			this.map.sounds.districts[i].setVolume(0);
+		}
+		this.map.sounds.districts[0].setVolume(this.map.sounds.districts[0].properties.volume);
 		
 		// Callback
 		callback();

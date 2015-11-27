@@ -719,14 +719,14 @@ function drawGaze(trackData){
 * Gets executed after all the preparation is done (all the files have been downloaded) and tracker is ready to start tracking.
 * In this case it enables buttons on the page.
 */
-function callbackDownload(){
-  //var btnStart = document.getElementById('buttonStart');
-  //var btnStop = document.getElementById('buttonStop');
-  //btnStart.disabled = false;
-  //btnStop.disabled = false;
-  //Start tracking
-  StartTracker();
-}
+// function callbackDownload(){
+//   //var btnStart = document.getElementById('buttonStart');
+//   //var btnStop = document.getElementById('buttonStop');
+//   //btnStart.disabled = false;
+//   //btnStop.disabled = false;
+//   //Start tracking
+//   StartTracker();
+// }
 
 var timeme = false;
 var trackerReturnState = "TRACK_STAT_OFF";
@@ -826,7 +826,7 @@ function processFrame(){
 
   Daredevil.process(faceData);
 }
-//Function called when Start is clicked, tracking is resumed/started
+// //Function called when Start is clicked, tracking is resumed/started
 function StartTracker(){
   
   startTracking = true;
