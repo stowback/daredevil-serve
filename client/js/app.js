@@ -15366,6 +15366,241 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ ])
 });
 ;
+/*!
+ * The Final Countdown for jQuery v2.1.0 (http://hilios.github.io/jQuery.countdown/)
+ * Copyright (c) 2015 Edson Hilios
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+(function(factory) {
+    "use strict";
+    if (typeof define === "function" && define.amd) {
+        define([ "jquery" ], factory);
+    } else {
+        factory(jQuery);
+    }
+})(function($) {
+    "use strict";
+    var instances = [], matchers = [], defaultOptions = {
+        precision: 100,
+        elapse: false
+    };
+    matchers.push(/^[0-9]*$/.source);
+    matchers.push(/([0-9]{1,2}\/){2}[0-9]{4}( [0-9]{1,2}(:[0-9]{2}){2})?/.source);
+    matchers.push(/[0-9]{4}([\/\-][0-9]{1,2}){2}( [0-9]{1,2}(:[0-9]{2}){2})?/.source);
+    matchers = new RegExp(matchers.join("|"));
+    function parseDateString(dateString) {
+        if (dateString instanceof Date) {
+            return dateString;
+        }
+        if (String(dateString).match(matchers)) {
+            if (String(dateString).match(/^[0-9]*$/)) {
+                dateString = Number(dateString);
+            }
+            if (String(dateString).match(/\-/)) {
+                dateString = String(dateString).replace(/\-/g, "/");
+            }
+            return new Date(dateString);
+        } else {
+            throw new Error("Couldn't cast `" + dateString + "` to a date object.");
+        }
+    }
+    var DIRECTIVE_KEY_MAP = {
+        Y: "years",
+        m: "months",
+        n: "daysToMonth",
+        w: "weeks",
+        d: "daysToWeek",
+        D: "totalDays",
+        H: "hours",
+        M: "minutes",
+        S: "seconds"
+    };
+    function escapedRegExp(str) {
+        var sanitize = str.toString().replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1");
+        return new RegExp(sanitize);
+    }
+    function strftime(offsetObject) {
+        return function(format) {
+            var directives = format.match(/%(-|!)?[A-Z]{1}(:[^;]+;)?/gi);
+            if (directives) {
+                for (var i = 0, len = directives.length; i < len; ++i) {
+                    var directive = directives[i].match(/%(-|!)?([a-zA-Z]{1})(:[^;]+;)?/), regexp = escapedRegExp(directive[0]), modifier = directive[1] || "", plural = directive[3] || "", value = null;
+                    directive = directive[2];
+                    if (DIRECTIVE_KEY_MAP.hasOwnProperty(directive)) {
+                        value = DIRECTIVE_KEY_MAP[directive];
+                        value = Number(offsetObject[value]);
+                    }
+                    if (value !== null) {
+                        if (modifier === "!") {
+                            value = pluralize(plural, value);
+                        }
+                        if (modifier === "") {
+                            if (value < 10) {
+                                value = "0" + value.toString();
+                            }
+                        }
+                        format = format.replace(regexp, value.toString());
+                    }
+                }
+            }
+            format = format.replace(/%%/, "%");
+            return format;
+        };
+    }
+    function pluralize(format, count) {
+        var plural = "s", singular = "";
+        if (format) {
+            format = format.replace(/(:|;|\s)/gi, "").split(/\,/);
+            if (format.length === 1) {
+                plural = format[0];
+            } else {
+                singular = format[0];
+                plural = format[1];
+            }
+        }
+        if (Math.abs(count) === 1) {
+            return singular;
+        } else {
+            return plural;
+        }
+    }
+    var Countdown = function(el, finalDate, options) {
+        this.el = el;
+        this.$el = $(el);
+        this.interval = null;
+        this.offset = {};
+        this.options = $.extend({}, defaultOptions);
+        this.instanceNumber = instances.length;
+        instances.push(this);
+        this.$el.data("countdown-instance", this.instanceNumber);
+        if (options) {
+            if (typeof options === "function") {
+                this.$el.on("update.countdown", options);
+                this.$el.on("stoped.countdown", options);
+                this.$el.on("finish.countdown", options);
+            } else {
+                this.options = $.extend({}, defaultOptions, options);
+            }
+        }
+        this.setFinalDate(finalDate);
+        this.start();
+    };
+    $.extend(Countdown.prototype, {
+        start: function() {
+            if (this.interval !== null) {
+                clearInterval(this.interval);
+            }
+            var self = this;
+            this.update();
+            this.interval = setInterval(function() {
+                self.update.call(self);
+            }, this.options.precision);
+        },
+        stop: function() {
+            clearInterval(this.interval);
+            this.interval = null;
+            this.dispatchEvent("stoped");
+        },
+        toggle: function() {
+            if (this.interval) {
+                this.stop();
+            } else {
+                this.start();
+            }
+        },
+        pause: function() {
+            this.stop();
+        },
+        resume: function() {
+            this.start();
+        },
+        remove: function() {
+            this.stop.call(this);
+            instances[this.instanceNumber] = null;
+            delete this.$el.data().countdownInstance;
+        },
+        setFinalDate: function(value) {
+            this.finalDate = parseDateString(value);
+        },
+        update: function() {
+            if (this.$el.closest("html").length === 0) {
+                this.remove();
+                return;
+            }
+            var hasEventsAttached = $._data(this.el, "events") !== undefined, now = new Date(), newTotalSecsLeft;
+            newTotalSecsLeft = this.finalDate.getTime() - now.getTime();
+            newTotalSecsLeft = Math.ceil(newTotalSecsLeft / 1e3);
+            newTotalSecsLeft = !this.options.elapse && newTotalSecsLeft < 0 ? 0 : Math.abs(newTotalSecsLeft);
+            if (this.totalSecsLeft === newTotalSecsLeft || !hasEventsAttached) {
+                return;
+            } else {
+                this.totalSecsLeft = newTotalSecsLeft;
+            }
+            this.elapsed = now >= this.finalDate;
+            this.offset = {
+                seconds: this.totalSecsLeft % 60,
+                minutes: Math.floor(this.totalSecsLeft / 60) % 60,
+                hours: Math.floor(this.totalSecsLeft / 60 / 60) % 24,
+                days: Math.floor(this.totalSecsLeft / 60 / 60 / 24) % 7,
+                daysToWeek: Math.floor(this.totalSecsLeft / 60 / 60 / 24) % 7,
+                daysToMonth: Math.floor(this.totalSecsLeft / 60 / 60 / 24 % 30.4368),
+                totalDays: Math.floor(this.totalSecsLeft / 60 / 60 / 24),
+                weeks: Math.floor(this.totalSecsLeft / 60 / 60 / 24 / 7),
+                months: Math.floor(this.totalSecsLeft / 60 / 60 / 24 / 30.4368),
+                years: Math.abs(this.finalDate.getFullYear() - now.getFullYear())
+            };
+            if (!this.options.elapse && this.totalSecsLeft === 0) {
+                this.stop();
+                this.dispatchEvent("finish");
+            } else {
+                this.dispatchEvent("update");
+            }
+        },
+        dispatchEvent: function(eventName) {
+            var event = $.Event(eventName + ".countdown");
+            event.finalDate = this.finalDate;
+            event.elapsed = this.elapsed;
+            event.offset = $.extend({}, this.offset);
+            event.strftime = strftime(this.offset);
+            this.$el.trigger(event);
+        }
+    });
+    $.fn.countdown = function() {
+        var argumentsArray = Array.prototype.slice.call(arguments, 0);
+        return this.each(function() {
+            var instanceNumber = $(this).data("countdown-instance");
+            if (instanceNumber !== undefined) {
+                var instance = instances[instanceNumber], method = argumentsArray[0];
+                if (Countdown.prototype.hasOwnProperty(method)) {
+                    instance[method].apply(instance, argumentsArray.slice(1));
+                } else if (String(method).match(/^[$A-Z_][0-9A-Z_$]*$/i) === null) {
+                    instance.setFinalDate.call(instance, method);
+                    instance.start();
+                } else {
+                    $.error("Method %s does not exist on jQuery.countdown".replace(/\%s/gi, method));
+                }
+            } else {
+                new Countdown(this, argumentsArray[0], argumentsArray[1]);
+            }
+        });
+    };
+});
 var YoloJS = function () {
 
   this.version = '0.0.1';
@@ -15374,11 +15609,15 @@ var YoloJS = function () {
 
 var dard = YoloJS.Daredevil = function () {
 
+  this.loadTpl.apply(this);
 }
 
 _.extend(dard.prototype, {
 
   previousPage: null,
+  map: null,
+  tpl: [],
+  tplLoaded: [],
   
   process: function (faceData) {
     if (faceData.faceRotation[1] > 0.10) {
@@ -15404,10 +15643,28 @@ _.extend(dard.prototype, {
         time: new Date()
       });
     }
+  },
+
+  loadTpl: function () {
+
+    var self = this;
+    var promise = [];
+
+    _.each(self.tpl ,function (tpl) {
+
+      promise.push($.ajax({
+        url: "views/" + tpl + ".hbs",
+        complete: function (hbs) {
+          self.tplLoaded[tpl] = hbs.responseText; 
+        }
+      }));
+    });
+
+    $.when.apply($, promise).then(function () {
+      $.event.trigger('tplLoaded');
+    });
   }
 });
-
-var Daredevil = new dard();
 
 // Backbone extend
 var extend = function(protoProps, staticProps) {
@@ -15430,7 +15687,7 @@ var extend = function(protoProps, staticProps) {
   return child;
 };
 
-
+dard.extend = extend;
 var Router = YoloJS.Router = function () {
 
   this.routes = [];
@@ -15440,6 +15697,7 @@ var Router = YoloJS.Router = function () {
 };
 
 _.extend(Router.prototype, {
+
   config: function  (options) {
     this.mode = options && options.mode && options.mode == 'history' 
                 && !!(history.pushState) ? 'history' : 'hash';
@@ -15448,6 +15706,7 @@ _.extend(Router.prototype, {
   },
 
   add: function (route, handler) {
+
     if(typeof route == 'function') {
       handler = route;
       route = '';
@@ -15457,6 +15716,7 @@ _.extend(Router.prototype, {
   },
 
   getFragment: function() {
+
     var fragment = '';
     if(this.mode === 'history') {
         fragment = this.clearSlashes(decodeURI(location.pathname + location.search));
@@ -15470,10 +15730,12 @@ _.extend(Router.prototype, {
   },
   
   clearSlashes: function(path) {
+
     return path.toString().replace(/\/$/, '').replace(/^\//, '');
   },
 
   check: function(f) {
+
     var fragment = f || this.getFragment();
     for(var i=0; i<this.routes.length; i++) {
       var match = fragment.match(this.routes[i].route);
@@ -15487,6 +15749,7 @@ _.extend(Router.prototype, {
   },
 
   listen: function() {
+
     var self = this;
 
     var current = self.getFragment();
@@ -15504,6 +15767,7 @@ _.extend(Router.prototype, {
   },
 
   navigate: function(path) {
+    
     path = path ? path : '';
     if(this.mode === 'history') {
       history.pushState(null, null, this.root + this.clearSlashes(path));
@@ -15520,30 +15784,65 @@ _.extend(Router.prototype, {
   this.libs['js']['bezier'] = 'visage/bezier-spline.js';
   this.libs['js']['visage'] = 'visage/visage.js';
   this.libs['js']['visageSDK'] = 'visage/visage/visageSDK.js';
+  this.libs['js']['GameSound'] = 'sound-engine/class/Game.class.js';
+  this.libs['js']['MapSound'] = 'sound-engine/class/Map.class.js';
+  this.libs['js']['CharacterSound'] = 'sound-engine/class/Character.class.js';
+  this.libs['js']['DistrictSound'] = 'sound-engine/class/District.class.js';
+
+  // Put in YoloJS variable the current view
+  YoloJS.curentView = this;
+  this.previousPage = null;
 
   this.initialize.apply(this, arguments);
 };
 
 _.extend(View.prototype, {
 
+  /**
+   * Variables
+   * for configure the view.
+   */
+  
+  // tagName for append element
   tagName: 'div',
-  pageName: 'default',
-  pageDiv: $(this.tagName).find('.' + this.pageName),
-  tpl: null,
-  timingAnimationIntro: 0,
-  timingAnimationOutro: 0,
-  bodyClass: null,
-  libs: [],
 
+  // Name for the classe
+  pageName: 'default',
+  
+  // selector of the div
+  pageDiv: $(this.tagName).find('.' + this.pageName),
+
+  // tpl HBS
+  tpl: null,
+
+  // Timing animation Intro
+  timingAnimationIntro: 0,
+
+  // Timing animation Outro
+  timingAnimationOutro: 0,
+
+  // Body class
+  bodyClass: null,
+
+  // JS loaded
+  js: [],
+
+  
   initialize: function () {
+
+    if (YoloJS.previousPage == null) {
+      this.timingAnimationIntro = 0;
+    };
+
     this.render();
   },
 
+  // Load the JS by js array, libs is in core/View.js
   loadJS: function (cb) {
 
     var self = this;
     var count = 0;
-    _.each(self.libs, function (lib) {
+    _.each(self.js, function (lib) {
       var tag = document.createElement("script");
       tag.src = 'js/' + self.libs['js'][lib];
       document.getElementsByTagName("head")[0].appendChild(tag);
@@ -15555,51 +15854,79 @@ _.extend(View.prototype, {
     };
   },
 
+  // Load the hbs
   load: function (data, cb) {
 
-    var self = this;
+    var self = this,
+        tpl;
 
-    $.ajax({
-      url: "views/" + this.tpl + ".hbs",
-    }).done(function (hbs) {
-      
-      var tpl = Handlebars.compile(hbs);  
-      $(self.tagName).append('<div class="page page-' + self.pageName + '">' + tpl(data) + '</div>');
-      cb(null, true)
-    });
+    var html = app.tplLoaded[self.tpl];
+
+    if (html) {
+
+      self.templating(self.compile(html), data)
+      cb(null, true);
+    } else {
+
+      $.ajax({
+        url: "views/" + this.tpl + ".hbs",
+      }).done(function (hbs) {
+
+        app.tplLoaded[self.tpl] = hbs;
+
+        self.templating(self.compile(hbs), data);
+        cb(null, true);
+      });
+    }
   },
 
+  compile: function (html) {
+
+    return Handlebars.compile(html);
+  },
+
+  templating: function (template, data) {
+
+    var self = this;
+
+    $(self.tagName).append('<div class="page page-' + self.pageName + '">' + template(data) + '</div>');
+  }, 
+
+  // Render the page
   render: function (data) {
     
-    var self = this;
-
-
+    var self = this,
+        animationOutro;
 
     self.load(data, function () {
-      self.setPageClass();
-      self.app.apply(self, arguments);
-    });
-    
-    self.loadJS(function (res) {
-      console.log("loaded")
-    });
-
-    setTimeout(function(){
       
-      self.deleteOldPage();
+    
+      self.loadJS(function (res) {
+        self.app.apply(self, arguments);
+      });
 
-    }, self.timingAnimationIntro);
+      if (YoloJS.previousPage) {
+        $('.page-' + YoloJS.previousPage.pageName).addClass('hide');
+        animationOutro = YoloJS.previousPage.timingAnimationOutro;
+      } else {
+        animationOutro = 0;
+      }
+
+      setTimeout(function(){
+        self.setPageClass();
+        self.deleteOldPage();
+
+      }, animationOutro);
+
+    });
   },
 
+  // Apply when template is loaded, allow execute some code for this page.
   app: function () {},
 
   setPageClass: function () {
 
     var self = this;
-
-    if (Daredevil.previousPage != null) {
-      $('.page-' + Daredevil.previousPage).addClass('hide');
-    };
 
     $(self.tagName + ' .page-' + self.pageName).addClass('show');
   },
@@ -15608,104 +15935,142 @@ _.extend(View.prototype, {
 
     var self = this;
 
-    $('.page-' + Daredevil.previousPage).remove();
+    if (YoloJS.previousPage) {
+      $('.page-' + YoloJS.previousPage.pageName).remove();
+    };
 
-    Daredevil.previousPage = self.pageName;
-  }
+    YoloJS.previousPage = self;
+  },
+
+  getTpl: function (tpl, data) {
+
+    var hbs = YoloJS.tplLoaded[tpl],
+        self = this;
+
+    if (hbs) {
+      
+      var tpl = self.compile(tpl);
+      return tpl(data);
+    } else {
+
+      $.ajax({
+        url: "views/" + tpl + ".hbs",
+      }).done(function (hbs) {
+
+        app.tplLoaded[tpl] = hbs;
+
+        var tpl = self.compile(tpl);
+        return tpl(data);
+      });
+    }
+  } 
 });
 
 View.extend = extend;
+var Yolo = YoloJS.Daredevil.extend({
+  tpl: ['about', 'tuto', 'final', 'game', 'goal', 'help', 'home', 'intro', 'loading', 'webcam', 'win'],
+  tplLoaded: []
+});
+
+var Daredevil = app = new Yolo();
+
 $(function () {
+
   var router = new Router();
 
   router.config();
 
   router.add(/intro/, function () {
+    
     new introView();
-
-    var checked = {
-      left: false,
-      right: false,
-      center: false
-    }
-
-    var count = 0;
-
-    if (!checked.left) {
-      $(document).on('lookLeft', function () {
-        count++;
-        if (!checked.right && count == 3) {
-          count = 0;
-          checked.left = true;
-          $(document).on('lookRight', function () {
-            count++;
-            if (!checked.center && count == 3) {
-              count = 0;
-              checked.right = true;
-              $(document).on('lookCenter', function () {
-                count++;
-                if (count == 3) {
-                  console.log("done :)");
-                };
-              });
-            };
-          });
-        };
-      });
-    };
   });
 
   router.add(/game/, function () {
-    
-    var g = new gameView();
+
+    if (Daredevil.map != null) {
+      new gameView(); 
+    } else {
+      new loadingGameView();
+    }
   });
 
   router.add(/configuration/, function () {
 
-    new configurationView();
+    new tutoView();
+  });
+
+  router.add(/loading/, function () {
+
+    new loadingGameView();
+  });
+
+  router.add(/final/, function () {
+
+    new finalView();
+  });
+
+  router.add(/win/, function () {
+
+    new winView();
   });
 
   router.add(function() {
+
     new homeView();
   });
 
-  router.listen();
 
+  router.listen();
+  
   Daredevil.router = router;
+
 });
   var homeView = YoloJS.View.extend({
 
     tagName: '#app',
     tpl: 'home',
-    timingAnimationIntro: 1000,
-    pageName: 'game'
+    timingAnimationOutro: 3000,
+    pageName: 'home'
   });
+/**
+ * Intro ViewController
+ * /intro
+ */
+
 var introView = YoloJS.View.extend({
 
   tagName: '#app',
   pageName: 'intro',
   tpl: 'intro',
-  timingAnimationIntro: 1000,
+  timingAnimationOutro: 2000,
 
   app: function () {
+
+    // DOM
     $page = $('.page-'+this.pageName);
-    var player = $page.find('video.video-intro').get(0);
-    player.play();
+    $player = $page.find('video.video-intro');
 
-    player.onended = function () {
+    // Launch
+    setTimeout(function (){
+      $player.get(0).play();
+      $('.skip-btn').css('display', 'block');
+    }, 2000);
+
+
+    $player.get(0).onended = function () { endVideoIntro(); };
+    $('.video-intro').on('click', function (e)
+    {
+      e.preventDefault();
       endVideoIntro();
-    }
+    });
 
-    setTimeout(function () {
-      $page.find('h2').fadeIn();
-    }, 10000)
-
-    $(document).on('keyup', endVideoIntro);
   }
 });
 
 
+// End video Intro
 function endVideoIntro() {
+  $player.animate({ volume: 0 }, 2000);
   Daredevil.router.navigate('/configuration');
 }
 var gameView = YoloJS.View.extend({
@@ -15713,60 +16078,434 @@ var gameView = YoloJS.View.extend({
   tagName: '#app',
   pageName: "game",
   tpl: 'game',
-  timingAnimationIntro: 1000
-});
-var configurationView = YoloJS.View.extend({
-
-  tagName: '#app',
-  pageName: "configuration",
-  tpl: 'configuration',
   timingAnimationIntro: 1000,
 
   app: function () {
 
-    var selectedChoice = null;
+    var game = new Game(Daredevil.map);
 
-    $('.choices .choice').on({
-      
-      mouseenter: function () {
+    game.init(function () {
 
-        if (selectedChoice != null) {
-          return false;
-        };
+      game.start();
+    });
 
-        $(this).addClass('selected');
+    game.callbacks.onWin = function (data){ console.log(data); };
+    game.callbacks.onLose = function (data){ console.log(data); };
+    game.callbacks.onClue = function (data){ console.log(data); };
 
-        $('.choices-help p').removeClass('show');
-        $('.choices-help p#' + $(this).data('help')).addClass('show');
-      },
+    console.log(Daredevil.navigation);
 
-      mouseleave: function () {
-
-        if (selectedChoice != null) {
-          return false;
-        };
-
-        $(this).removeClass('selected');
-
-        $('.choices-help p').removeClass('show');
-        $('.choices-help p#default').addClass('show');
-      },
-
-      click: function () {
-
-        if (selectedChoice != null) {
-          $('.choices .choice').removeClass('selected');
-          selectedChoice = null;
-          return false;
-        };
-
-        selectedChoice = $(this).data('help');
-
-        $(this).addClass('selected');
-        $('.choices-help p').removeClass('show');
-        $('.choices-help p#' + selectedChoice).addClass('show');
+    if (Daredevil.navigation == "webcam") {
+      try {
+        navigator.getUserMedia_({
+          video: true,
+          audio: false
+        }, startStream, function () {
+          $.event.trigger({
+            type: "notAllowWebcam",
+          });
+        });
+      } catch (e) {
+        try {
+          navigator.getUserMedia_('video', startStream, function () {
+            $.event.trigger({
+              type: "notAllowWebcam",
+            });
+          });
+        } catch (e) {
+          errorStream(e);
+        }
       }
+      startStream();
 
+      $(document).on({
+
+        lookLeft: function() {
+          console.log('gauche')
+          game.setDaredevilMove("left");
+        },
+
+        lookRight: function () {
+          console.log('right')
+          game.setDaredevilMove("right");
+        }
+
+      });
+
+    } else {
+
+      $(window).on('keydown', function (e) {
+        
+        switch(e.keyCode) {
+          case 37: game.setDaredevilMove("left"); break;
+          case 39: game.setDaredevilMove("right"); break;
+        }
+
+      });
+
+    }
+  }
+});
+var tutoView = YoloJS.View.extend({
+
+  // Config
+  tagName: '#app',
+  pageName: "tuto",
+  tpl: 'tuto',
+  timingAnimationOutro: 3000,
+
+  // Vue
+  current: 1,
+  total: 3,
+
+  app: function () {
+
+    // Reference
+    var that = this;
+
+    // Controls
+    $('.btn.btn-next').on('click', function (e)
+    {
+      e.preventDefault();
+      if(!$(this).hasClass('disabled')){ that.next(); }
+    });
+
+  },
+
+  // Next
+  next: function ()
+  {
+    
+    // Section
+    if(this.current < this.total)
+    {
+      // Update
+      this.current++;
+
+      // Leave previous
+      var previous = $('.tuto-content[data-step='+(this.current-1)+'], .tuto-title[data-step='+(this.current-1)+']');
+      previous.addClass('hide').removeClass('show');
+
+      // Add next
+      var next = $('.tuto-content[data-step='+this.current+'], .tuto-title[data-step='+this.current+']');
+      if(next.get(1) && next.get(1).getAttribute('data-init'))
+      {
+        this[next.get(1).getAttribute('data-init')](function ()
+        {
+          // Show
+          next.addClass('show').removeClass('hide');
+        });
+      }
+      else
+      {
+        // Show
+        next.addClass('show').removeClass('hide');
+      }
+    }
+
+    // Game
+    else
+    {
+      // Transition
+      $('.tuto-title.show').addClass('hide').removeClass('show');
+      $('.tuto-content.show').addClass('hide').removeClass('show');
+
+      // Next
+      if(!Daredevil.map){ new loadingGameView();  }
+      else{ Daredevil.router.navigate('/game'); }
+    }
+
+  },
+
+
+  // Choice
+  initChoice: function (callback)
+  {
+
+    // Reference
+    var self = this;
+
+    // Choice
+    Daredevil.navigation = null;
+
+    // Selection
+    $('.choices .choice').on('click', function (e)
+    {
+      e.preventDefault();
+
+      if($(this).attr('data-help') != Daredevil.navigation)
+      {
+        // Selected
+        Daredevil.navigation = $(this).attr('data-help');
+
+        // Active state
+        $('.choice').removeClass('active');
+        $(this).addClass('active');
+
+        // Button
+        $('.tuto-choice .btn.disabled').removeClass('disabled');
+      }
+    });
+
+    // Callback
+    callback();
+
+  },
+
+
+  // Commands
+  initCommands: function (callback)
+  {
+
+    // Content
+    var contents = {
+      webcam: '<div class="tuto-command"><h3>Move</h3><p>Turn your head on left, right or top <strong>down</strong> to steer you in the right direction and catch up the kidnapper.</p></div><div class="tuto-command"><h3>Pause</h3><p>Just open your eyes to pause the game.</p></div>',
+      keyboard: '<div class="tuto-command"><h3>Move</h3><p>Maintain the left, ahead or right key down to steer yourself. You must maintain the key pressed on the kidnapper direction.</p></div><div class="tuto-command"><h3>Pause</h3><p>Just open your eyes to pause the game.</p></div>'
+    };
+    $('.tuto-commands').prepend($(contents[Daredevil.navigation]));
+
+    // Callback
+    callback();
+
+  },
+
+});
+var webcamView = YoloJS.View.extend({
+
+  tagName: '#app',
+  pageName: "wbecam",
+  tpl: 'webcam',
+  timingAnimationIntro: 1000,
+  js: ['bezier', 'visage', 'visageSDK'],
+
+  app: function () {
+    $(document).on({
+      lookLeft: function () {
+        console.log("coucou")
+      },
+
+      allowWebcam: function () {
+        console.log("allowed")
+        $('#continue-webcam').removeClass('disabled')
+      } 
+    });
+
+    $('#continue-webcam').click(function () {
+      Daredevil.router.navigate('/game');
     });
   }
+
+});
+var loadingGameView = YoloJS.View.extend({
+
+  // Global
+  tagName: '#app',
+  pageName: "loading",
+  tpl: 'loading',
+  timingAnimationIntro: 2800,
+  // js: ['GameSound', 'MapSound', 'CharacterSound', 'DistrictSound'],
+  
+
+  // Properties
+  currentLoading: 0,
+
+
+  // DOM
+  container: null,
+
+
+  // App
+  app: function () {
+
+    // Self
+    var self = this;
+
+    // DOM
+    this.container = $('.loading-container');
+
+    // Start
+    this.setLoading("Download datas");
+    
+    // Request
+    var jsonCall = $.getJSON('js/sound-engine/config.json');
+    
+    // Success
+    jsonCall.success(function (data)
+    {
+      
+      // Store
+      config = data;
+
+      // Create map
+      Daredevil.map = new Map(config);
+
+      // Init
+      Daredevil.map.init(
+        function (message){ self.setLoading(message); },
+        function ()
+        {
+          self.setLoading("Initialisation of paths"); 
+          self.next();
+        },
+        function (error){ self.loading("Unfortunately, an error occured"); });
+    });
+
+    // Error
+    jsonCall.error(function (err){ console.log(err); });
+
+    
+  },
+
+
+  // Loading
+  setLoading: function (message)
+  {
+
+    // Remove previous
+    this.container.find('.loading-message.active').removeClass('active').addClass('old');
+
+    // Message
+    var message = $('<span class="loading-message active">' + message + '</span>');
+    this.container.append(message);
+
+    // Offset
+    this.container.css('transform', 'translate3d(0, '+(-this.currentLoading*100)+'px, 0)');
+
+    // Current
+    this.currentLoading++;
+
+  },
+
+
+  // Next
+  next: function ()
+  {
+
+    // Reference
+    var self = this;
+
+    // Webcam
+    if(Daredevil.navigation == "webcam")
+    {
+
+    }
+
+    // Keyboard
+    else
+    {
+      // Event
+      $(window).on('keyup', function (e)
+      {
+        if(e.keyCode == 32)
+        {
+          // Remove event
+          $(window).off('keyup');
+
+          // Game
+          Daredevil.router.navigate('/game');
+        }
+      });
+
+      // Message
+      setTimeout(function (){ self.setLoading("Press space key to start"); }, 2000);
+    }
+
+  }
+
+
+});
+  var finalView = YoloJS.View.extend({
+
+    tagName: '#app',
+    tpl: 'final',
+    timingAnimationIntro: 1000,
+    pageName: 'final',
+
+    app: function () {
+
+      var $content = $('.final-content');
+      var $video = $('.video-final');
+      var video = $video.get(0);
+
+      var mousePos = {
+        x: null,
+        y: null
+      };
+
+      var focusVideo = _.debounce(function (e) {
+
+        mousePos.x = e.clientX;
+        mousePos.y = e.clientY;
+
+        $content.fadeOut(function () {
+          $('body').css('cursor', 'none');
+        });
+      }, 3000);
+
+      $content.mousemove(focusVideo);
+      $video.mousemove(function (e) {
+        if (e.clientX != mousePos.x || e.clientY != mousePos.y) {
+          $content.fadeIn(function () {
+            $('body').css('cursor', 'auto');
+          });
+        };
+      }); 
+
+      $(".countdown").countdown("2016/01/01", function(event) {
+        $this = $(this);
+
+        var offset = event.offset;
+
+        var $days = $this.find('.days');
+        $days.find('.replace').empty();
+        if (offset.totalDays.toString().length < 2) {
+          $days.find('.replace').append('<span>0</span>');
+        };
+        $.each(offset.totalDays.toString().split(''), function (index, item) {
+          $days.find('.replace').append('<span>' + item + '</span>');
+        });
+
+        var $hours = $this.find('.hours');
+        $hours.find('.replace').empty();
+        if (offset.hours.toString().length < 2) {
+          $hours.find('.replace').append('<span>0</span>');
+        };
+        $.each(offset.hours.toString().split(''), function (index, item) {
+          $hours.find('.replace').append('<span>' + item + '</span>');
+        });
+
+        var $minutes = $this.find('.minutes');
+        $minutes.find('.replace').empty();
+        if (offset.minutes.toString().length < 2) {
+          $minutes.find('.replace').append('<span>0</span>');
+        };
+        $.each(offset.minutes.toString().split(''), function (index, item) {
+          $minutes.find('.replace').append('<span>' + item + '</span>');
+        });
+
+        var $seconds = $this.find('.seconds');
+        $seconds.find('.replace').empty();
+        if (offset.seconds.toString().length < 2) {
+          $seconds.find('.replace').append('<span>0</span>');
+        };
+        $.each(offset.seconds.toString().split(''), function (index, item) {
+          $seconds.find('.replace').append('<span>' + item + '</span>');
+        });
+
+      });
+    }
+  });
+var helpView = YoloJS.View.extend({
+
+  tagName: '#app',
+  pageName: "help",
+  tpl: 'help',
+  timingAnimationIntro: 1000,
+});
+var winView = YoloJS.View.extend({
+
+  tagName: '#app',
+  pageName: "win",
+  tpl: 'win',
+  timingAnimationIntro: 1000,
 });

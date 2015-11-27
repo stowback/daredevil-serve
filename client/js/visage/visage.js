@@ -918,10 +918,26 @@ try {
   navigator.getUserMedia_({
     video: true,
     audio: false
-  }, startStream, deniedStream);
+  },function () {
+    $.event.trigger({
+      type: "allowWebcam",
+    });
+  }, function () {
+    $.event.trigger({
+      type: "notAllowWebcam",
+    });
+  });
   } catch (e) {
     try {
-      navigator.getUserMedia_('video', startStream, deniedStream);
+      navigator.getUserMedia_('video', function (){
+        $.event.trigger({
+          type: "allowWebcam",
+        });
+      }, function () {
+        $.event.trigger({
+          type: "notAllowWebcam",
+        });
+      });
     } catch (e) {
       errorStream(e);
     }

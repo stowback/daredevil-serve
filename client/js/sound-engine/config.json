@@ -1,0 +1,92 @@
+{
+	"map": {
+		"model": "base",
+		"points": {
+			"width": 50,
+			"height": 50
+		},
+		"districts": {
+			"fadein": 100,
+			"volume": 1
+		},
+		"objects": {
+			"volume": 0.7
+		},
+		"ride": {
+			"trajectory_max_length": 5,
+			"trajectory_min_length": 1
+		}
+	},
+	"characters": {
+		"daredevil": {
+			"sound": {
+				"name": "daredevil_running",
+				"file": "daredevil_course.mp3",
+				"volume": 0.7
+			},
+			"moves": {
+				"duration": 200,
+				"distance": 13
+			},
+			"lose": {
+				"distance": 155,
+				"duration": 100,
+				"clues": 3
+			}
+		},
+		"kidnapper": {
+			"sound": {
+				"name": "kidnapper_running",
+				"file": "bebe_pleure.mp3",
+				"volume": 1
+			},
+			"moves": {
+				"duration": 1000,
+				"distance": 50
+			},
+			"advance": 100
+		},
+		"settings": {
+			"panner": {
+				"distanceModel": "exponential",
+				"rolloffFactor": 5,
+				"refDistance": 100
+			}
+		},
+		"speed": 50
+	},
+	"clues": {
+		"0": {
+			"photo": "test.jpg",
+			"name": "Bachi Bouzouk",
+			"text": "Lorem ipsum dolor est"
+		},
+		"1": {
+			"photo": "test_chinois.jpg",
+			"name": "Bachi Bouzouk chinois",
+			"text": "Lorem ipsum chinois dolor est"
+		},
+		"2": {
+			"photo": "test_pluie.jpg",
+			"name": "Bachi Bouzouk pluie",
+			"text": "Lorem ipsum pluie dolor est"
+		}
+	},
+	"messages": 
+	{
+		"lose": {
+			"photo": "defaite.jpg",
+			"name": "Dfaite Bouzouk",
+			"text": "Defaite ipsum dolor est"
+		},
+		"win": {
+			"photo": "victoire.jpg",
+			"name": "Victoire Bouzouk",
+			"text": "Victoire ipsum dolor est"
+		}	
+	},
+	"paths": {
+		"maps": "js/sound-engine/maps/",
+		"sounds": "storage/sounds/"
+	}
+}
