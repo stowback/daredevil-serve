@@ -39,7 +39,6 @@
 		this.kidnapperAdvance = this.map.config.characters.kidnapper.advance;
 
 		// Navigation
-		
 		this.move = {
 			daredevil: {
 				moving: false,
@@ -276,7 +275,6 @@
 		{
 			if(distance/this.map.config.map.points.height > this.map.sounds.districts[this.properties.district+1].distance)
 			{
-				console.log('ca change');
 				// Fades
 				this.map.sounds.districts[this.properties.district].fadeOut(10000);
 				this.map.sounds.districts[this.properties.district+1].fadeIn(10000);

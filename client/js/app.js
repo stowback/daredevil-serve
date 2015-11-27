@@ -15629,12 +15629,12 @@ _.extend(dard.prototype, {
   // Process trigger for faceData of VisageSDK
   process: function (faceData) {
 
-    if (faceData.faceRotation[1] > 0.10) { // Look Left
+    if (faceData.faceRotation[1] > 0.20) { // Look Left
       $.event.trigger({
         type: "lookLeft",
         time: new Date()
       });
-    } else if (faceData.faceRotation[1] <= 0.10 && faceData.faceRotation[1] >= -0.10) { // Look center
+    } else if (faceData.faceRotation[1] <= 0.20 && faceData.faceRotation[1] >= -0.20) { // Look center
       $.event.trigger({
         type: "lookCenter",
         time: new Date()
@@ -16159,6 +16159,10 @@ var introView = YoloJS.View.extend({
       $('.skip-btn').css('display', 'block');
     }, 2000);
 
+    $('.skip-btn').click(function (e) {
+      e.preventDefault();
+    });
+
 
     $player.get(0).onended = function () { endVideoIntro(); };
     $('.video-intro').on('click', function (e)
@@ -16208,12 +16212,35 @@ var gameView = YoloJS.View.extend({
     this.game.callbacks.onClue = function (data){ self.getClue(data); };
 
     // Webcam
-    if (Daredevil.navigation == "webcam") {
-
+    if (Daredevil.navigation == "webcam") 
+    {
+      // Directions
       $(document).on({
         lookLeft: function() { self.game.setDaredevilMove("left"); },
         lookRight: function () { self.game.setDaredevilMove("right"); },
-        lookCenter: function () { self.game.setDaredevilMove("center"); }
+        lookCenter: function () { self.game.setDaredevilMove("center"); },
+      });
+
+      // Pauses
+      $(window).on('keydown', function (e)
+      {  
+        switch(e.keyCode) {
+          case 32:
+            // Pause 
+            if(!self.game.pause && !self.game.clue)
+            {
+              self.game.setPause(true);
+              $('.game-pause').addClass('show').removeClass('hide');
+            }
+
+            // Resume
+            else if(self.game.pause && !self.game.clue)
+            {
+              self.game.setPause(false);
+              $('.game-pause').addClass('hide').removeClass('show');
+            }
+          break;
+        }
       });
     }
 
@@ -16597,23 +16624,18 @@ var loadingGameView = YoloJS.View.extend({
 
       StartTracker();
 
-      $(document).on('eyesClosed', function ()
-      {
-
-        console.log("salut bb")
+      var closeEyes = _.debounce(function () {
 
         // Remove event
-        $(document).off('eyesClosed');
+        $(document).off('eyesOpen');
 
         // Game
         Daredevil.router.navigate('/game');
-      });
+      }, 1000);
 
-      $(document).on('lookLeft', function () {
-        console.log('left');
-      });
+      $(document).on('eyesOpen', closeEyes);
 
-      setTimeout(function (){ self.setLoading("Close your eyes to start"); }, 2000);
+      setTimeout(function (){ self.setLoading("Maintain your eyes closed to start"); }, 2000);
     }
 
     // Keyboard
