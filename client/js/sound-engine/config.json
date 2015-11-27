@@ -87,6 +87,6 @@
 	},
 	"paths": {
 		"maps": "js/sound-engine/maps/",
-		"sounds": "storage/sounds/"
+		"sounds": "sounds/"
 	}
 }
